@@ -59,7 +59,7 @@ end
 
 # Create ember:package tasks for each of the Ember packages
 namespace :ember do
-  %w(metal runtime handlebars views states datetime).each do |package|
+  %w(debug metal runtime handlebars views states datetime).each do |package|
     task package => compile_package_task("ember-#{package}", "ember-#{package}")
   end
 end
@@ -71,7 +71,7 @@ task :handlebars => compile_package_task("handlebars")
 task :metamorph => compile_package_task("metamorph")
 
 # Create a build task that depends on all of the package dependencies
-task :build => ["ember:metal", "ember:runtime", "ember:handlebars", "ember:views", "ember:states", "ember:datetime", :handlebars, :metamorph]
+task :build => ["ember:debug", "ember:metal", "ember:runtime", "ember:handlebars", "ember:views", "ember:states", "ember:datetime", :handlebars, :metamorph]
 
 distributions = {
   "ember" => ["handlebars", "ember-metal", "ember-runtime", "ember-views", "ember-states", "metamorph", "ember-handlebars"],
@@ -90,6 +90,15 @@ distributions.each do |name, libraries|
       libraries.each do |library|
         file.puts strip_require("tmp/static/#{library}.js")
       end
+    end
+  end
+
+  file "dist/#{name}.debug.js" => "dist/#{name}.js" do
+    puts "Generating #{name}.debug.js... "
+
+    File.open("dist/#{name}.debug.js", "w") do |file|
+      file.puts strip_require("tmp/static/ember-debug.js")
+      file.puts File.read("dist/#{name}.js")
     end
   end
 
@@ -119,7 +128,7 @@ end
 
 
 desc "Build Ember.js"
-task :dist => distributions.keys.map {|name| "dist/#{name}.min.js"}
+task :dist => distributions.keys.map{|name| ["dist/#{name}.debug.js", "dist/#{name}.min.js"] }.flatten
 
 desc "Clean build artifacts from previous builds"
 task :clean do
